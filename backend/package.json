@@ -1,13 +1,13 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Blog app",
+  "description": "Blog project",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "server": "nodemon server.js"
   },
-  "author": "iNovotek",
+  "author": "Pruthvi",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
