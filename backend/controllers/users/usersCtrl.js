@@ -1,7 +1,9 @@
 const expressAsyncHandler = require("express-async-handler");
+const sgMail = require("@sendgrid/mail");
 const generateToken = require("../../config/token/generateToken");
 const User = require("../../model/user/User");
 const validateMongodbId = require("../../utils/validateMongodbID");
+sgMail.setApiKey(process.env.SEND_GRID_API_KEY);
 
 //-------------------------------------
 //Register
@@ -26,7 +28,7 @@ const userRegisterCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-// hjv
+// hj
 
 //-------------------------------
 //Login user
@@ -256,8 +258,62 @@ const unBlockUserCtrl = expressAsyncHandler(async (req, res) => {
   );
   res.json(user);
 });
+//------------------------------
+// Generate Email verification token
+//------------------------------
+const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
+  const loginUserId = req.user.id;
+
+  const user = await User.findById(loginUserId);
+
+  try {
+    //Generate token
+    const verificationToken = await user.createAccountVerificationToken();
+    //save the user
+    await user.save();
+    console.log(verificationToken);
+    //build your message
+
+    const resetURL = `If you were requested to verify your account, verify now within 10 minutes, otherwise ignore this message <a href="http://localhost:3000/verify-account/${verificationToken}">Click to verify your account</a>`;
+    const msg = {
+      to: "ffdfd@gmail.com",
+      from: "sable.s@northeastern.edu",
+      subject: "My first Node js email sending",
+      html: resetURL,
+    };
+
+    await sgMail.send(msg);
+    res.json(resetURL);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+//------------------------------
+//Account verification
+//------------------------------
+
+const accountVerificationCtrl = expressAsyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  //find this user by token
+
+  const userFound = await User.findOne({
+    accountVerificationToken: hashedToken,
+    accountVerificationTokenExpires: { $gt: new Date() },
+  });
+  if (!userFound) throw new Error("Token expired, try again later");
+  //update the proprt to true
+  userFound.isAccountVerified = true;
+  userFound.accountVerificationToken = undefined;
+  userFound.accountVerificationTokenExpires = undefined;
+  await userFound.save();
+  res.json(userFound);
+});
 
 module.exports = {
+  generateVerificationTokenCtrl,
   userRegisterCtrl,
   loginUserCtrl,
   fetchUsersCtrl,
