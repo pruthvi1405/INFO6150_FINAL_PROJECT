@@ -82,7 +82,7 @@ const userSchema = new mongoose.Schema(
       ],
     },
     passwordChangeAt: Date,
-    passwordRessetToken: String,
+    passwordResetToken: String,
     passwordResetExpires: Date,
 
     active: {
@@ -100,6 +100,13 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+//virtual method to populate created post
+userSchema.virtual("posts", {
+  ref: "Post",
+  foreignField: "user",
+  localField: "_id",
+});
 
 //Hash password
 userSchema.pre("save", async function (next) {
@@ -127,6 +134,18 @@ userSchema.methods.createAccountVerificationToken = async function () {
     .digest("hex");
   this.accountVerificationTokenExpires = Date.now() + 30 * 60 * 1000; //10 minutes
   return verificationToken;
+};
+
+//Password reset/forget
+
+userSchema.methods.createPasswordResetToken = async function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.passwordResetExpires = Date.now() + 30 * 60 * 1000; //10 minutes
+  return resetToken;
 };
 
 //Compile schema into model
