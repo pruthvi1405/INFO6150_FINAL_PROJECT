@@ -6,4 +6,3 @@ module.exports = {
     },
   },
 };
-//carco instal
