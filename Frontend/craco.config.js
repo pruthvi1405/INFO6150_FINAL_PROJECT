@@ -1,4 +1,4 @@
-// craco.config.js
+// craco.config.js installation was done before previous commit
 module.exports = {
   style: {
     postcss: {
